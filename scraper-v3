@@ -1,14 +1,17 @@
 # This program pulls some financial data I'm interested in (and the weather!)
 # Author: Jason R. Carroll - February 11, 2020
-# v0.3
+# v0.4
+
+# modules 
 
 import bs4, requests
 from datetime import datetime
 
+# functions 
+
 def getData1(url):
     res = requests.get(url)
     res.raise_for_status()
-    
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
     data1 = soup.select('#pgNameVal') # use the "copy selector" function in Google Chrome 
     return data1[0].text
@@ -16,7 +19,6 @@ def getData1(url):
 def getData2(url):
     res = requests.get(url)
     res.raise_for_status()
-    
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
     data2 = soup.select('#securityQuoteInner > div.quoteData')
     return data2[0].text.strip() # strips the leading and trailing spaces 
@@ -24,7 +26,6 @@ def getData2(url):
 def getWeather(url):
     res = requests.get(url)
     res.raise_for_status()
-    
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
     bit1 = soup.select('#current_conditions-summary > p.myforecast-current')
     bit2 = soup.select('#current_conditions-summary > p.myforecast-current-lrg')
@@ -34,28 +35,68 @@ def getWeather(url):
     bit6 = soup.select('#detailed-forecast-body > div:nth-child(2) > div.col-sm-10.forecast-text')
     bit7 = soup.select('#detailed-forecast-body > div:nth-child(3) > div.col-sm-2.forecast-label > b')
     bit8 = soup.select('#detailed-forecast-body > div:nth-child(3) > div.col-sm-10.forecast-text')
-    return bit1[0].text, bit2[0].text, bit3[0].text, bit4[0].text, bit5[0].text, bit6[0].text, bit7[0].text, bit8[0].text
+    bit9 = soup.select('#detailed-forecast-body > div:nth-child(4) > div.col-sm-2.forecast-label > b')
+    bit10 = soup.select('#detailed-forecast-body > div:nth-child(4) > div.col-sm-10.forecast-text')
+    return bit1[0].text, bit2[0].text, bit3[0].text, bit4[0].text, bit5[0].text, bit6[0].text, bit7[0].text, bit8[0].text, bit9[0].text, bit10[0].text
 
-info1a= getData1('https://ycharts.com/indicators/10_year_treasury_rate')
-print('U.S. 10 Year Treasury Yield (10YTCMR) -- ' + str(info1a))
-info1b = getData1('https://ycharts.com/indicators/3_month_treasury_rate')
-print('U.S. 3 Month Treasury Yield (3MTCMR) -- ' + str(info1b))
-info2 = getData1('https://ycharts.com/indicators/1month_libor_based_on_united_states_dollar')
-print('USD 1-Month LIBOR (1MLIBORU) -- ' + str(info2))
-info3 = getData2('https://ycharts.com/indices/%5ESPX')
-print('\nS&P500 (^SPX) index -- ' + info3.strip('USD')) # prints this info stripped of 'USD' (redundant) 
-info4 = getData2('https://ycharts.com/indices/%5EDJI')
-print('Dow Jones Industrial Average (^DJI) index -- ' + info4.strip('USD'))
-info5 = getData2('https://ycharts.com/indices/%5EIXIC')
-print('NASDAQ Composite (^IXIC) index -- ' + info5.strip('USD'))
+def getData3(url):
+    res = requests.get(url)
+    res.raise_for_status()
+    soup = bs4.BeautifulSoup(res.text, 'html.parser')
+    data3a = soup.select('#post-823 > div > div.table-responsive > table > tbody > tr:nth-child(1) > td:nth-child(1)')
+    data3b = soup.select('#post-823 > div > div.table-responsive > table > tbody > tr:nth-child(1) > td:nth-child(2)')
+    data3c = soup.select('#post-823 > div > div.table-responsive > table > tbody > tr:nth-child(1) > td:nth-child(3)')
+    return data3a[0].text, data3b[0].text, data3c[0].text
+
+# main program 
+
+# interest rates 
+
 try:
-    info = getWeather('https://forecast.weather.gov/MapClick.php?CityName=Shaker+Heights&state=OH&site=CLE&textField1=41.4756&textField2=-81.5478&e=0')
-    s = ""
-    for i in info:
-        s = s + i + " ... "
-    print('Currently ... ' + s)
+    t10 = getData1('https://ycharts.com/indicators/10_year_treasury_rate')
+    print('U.S. 10 Year Treasury Yield (10YTCMR) ... ' + str(t10))
+    t3 = getData1('https://ycharts.com/indicators/3_month_treasury_rate')
+    print('U.S. 3 Month Treasury Yield (3MTCMR) ... ' + str(t3))
+    l30 = getData1('https://ycharts.com/indicators/1month_libor_based_on_united_states_dollar')
+    print('USD 1-Month LIBOR (1MLIBORU) ... ' + str(l30))
+except:
+    print('Interest Rates not available.')
+
+# tax credit percentages 
+
+try:
+    tcp = getData3('https://www.housingonline.com/resources/facts-figures/low-income-housing-tax-credit-rates/')
+    summary = ""
+    for item in tcp:
+        summary = summary + " ... " + item
+    print('\nLIHTC Percentages (9% / 4%)' + summary)
+except:
+    print('\nTax Credit Percentages not available.')
+
+# stock market indices 
+
+try:
+    sp500 = getData2('https://ycharts.com/indices/%5ESPX')
+    print('\nS&P500 (^SPX) index ... ' + sp500.strip('USD')) # prints this info stripped of 'USD' (redundant) 
+    dji = getData2('https://ycharts.com/indices/%5EDJI')
+    print('Dow Jones Industrial Average (^DJI) index ... ' + dji.strip('USD'))
+    nasd = getData2('https://ycharts.com/indices/%5EIXIC')
+    print('NASDAQ Composite (^IXIC) index ... ' + nasd.strip('USD'))
+except:
+    print('\nStock Market Indices not available.\n')
+
+# weather 
+
+try:
+    weather = getWeather('https://forecast.weather.gov/MapClick.php?CityName=Shaker+Heights&state=OH&site=CLE&textField1=41.4756&textField2=-81.5478&e=0')
+    summary = ""
+    for item in weather:
+        summary = summary + item + " ... "
+    print('Currently ... ' + summary)
 except:
     print('Weather not available.')
+
+# date/time and pause for user input before quitting 
 
 dt = datetime.now()
 dt2 = dt.replace(microsecond=0)
